@@ -1,27 +1,20 @@
 import React, { useEffect, useReducer } from "react";
 import Header from "./components/Header";
 import Main from "./components/Main";
-interface Question {
-   question: string;
-   options: [string];
-   correctOption: 0 | 1 | 2 | 3;
-   points: 10 | 20 | 30;
-}
-
-type Status = "loading" | "error" | "ready" | "active" | "finished";
-
-interface State {
-   questions: [Question] | [];
-   status: Status;
-}
-type Action =
-   | { type: "dataReceived"; payload: [Question] }
-   | { type: "dataFailed" };
+import Loader from "./components/Loader";
+import ErrorMessage from "./components/ErrorMessage";
+import StartScreen from "./components/StartScreen";
+import Question from "./components/Question";
+import { Action, State } from "./types/types";
+import NextButton from "./components/NextButton";
 
 const initialState: State = {
    questions: [],
    //'loading', 'error', 'ready', 'active', 'finished'
    status: "loading",
+   index: 0,
+   answer: null,
+   points: 0,
 };
 const reducer: React.Reducer<State, Action> = (state, action) => {
    switch (action.type) {
@@ -29,13 +22,34 @@ const reducer: React.Reducer<State, Action> = (state, action) => {
          return { ...state, questions: action.payload, status: "ready" };
       case "dataFailed":
          return { ...state, status: "error" };
+      case "start":
+         return { ...state, status: "active" };
+
+      case "newAnswer": {
+         const question = state.questions[state.index];
+         return {
+            ...state,
+            answer: action.payload,
+            points:
+               question.correctOption === action.payload
+                  ? state.points + question.points
+                  : state.points,
+         };
+      }
+
+      case "nextQuestion":
+         return { ...state, index: state.index + 1, answer: null };
       default:
          throw new Error("Action is Unknown");
    }
 };
 function App() {
-   const [state, dispatch] = useReducer(reducer, initialState);
-   console.log("DEBUG: ~ App ~ state:", state);
+   const [{ questions, status, index, answer }, dispatch] = useReducer(
+      reducer,
+      initialState
+   );
+
+   const numQuestions = questions.length;
 
    useEffect(() => {
       const controller = new AbortController();
@@ -62,7 +76,21 @@ function App() {
       <div className="app">
          <Header />
          <Main>
-            <p>1/15</p>
+            {status === "loading" && <Loader />}
+            {status === "error" && <ErrorMessage />}
+            {status === "ready" && (
+               <StartScreen numQuestions={numQuestions} dispatch={dispatch} />
+            )}
+            {status === "active" && (
+               <>
+                  <Question
+                     question={questions[index]}
+                     dispatch={dispatch}
+                     answer={answer}
+                  />
+                  <NextButton answer={answer} dispatch={dispatch} />
+               </>
+            )}
          </Main>
       </div>
    );
