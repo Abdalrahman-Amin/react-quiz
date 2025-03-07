@@ -13,10 +13,15 @@ export interface State {
    index: number;
    answer: number | null;
    points: number;
+   highscore: number;
+   secondsRemaining: number | null;
 }
 export type Action =
    | { type: "dataReceived"; payload: [Question] }
    | { type: "dataFailed" }
    | { type: "start" }
    | { type: "newAnswer"; payload: number }
-   | { type: "nextQuestion" };
+   | { type: "nextQuestion" }
+   | { type: "finish" }
+   | { type: "restart" }
+   | { type: "tick" };

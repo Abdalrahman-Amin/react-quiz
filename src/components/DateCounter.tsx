@@ -13,9 +13,6 @@ type Action =
 const initialState: State = { count: 0, step: 1 };
 
 const reducer: React.Reducer<State, Action> = (state, action) => {
-   console.log("DEBUG: ~ reducer ~ state:", state);
-   console.log("DEBUG: ~ reducer ~ action:", action);
-
    switch (action.type) {
       case "dec":
          return { ...state, count: state.count - state.step };

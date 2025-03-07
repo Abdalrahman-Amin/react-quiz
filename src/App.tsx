@@ -7,6 +7,13 @@ import StartScreen from "./components/StartScreen";
 import Question from "./components/Question";
 import { Action, State } from "./types/types";
 import NextButton from "./components/NextButton";
+import Progress from "./components/Progress";
+import FinishScreen from "./components/FinishScreen";
+import RestartButton from "./components/RestartButton";
+import Footer from "./components/Footer";
+import Timer from "./components/Timer";
+
+const SECS_PER_QUESTION = 30;
 
 const initialState: State = {
    questions: [],
@@ -15,6 +22,8 @@ const initialState: State = {
    index: 0,
    answer: null,
    points: 0,
+   highscore: 0,
+   secondsRemaining: null,
 };
 const reducer: React.Reducer<State, Action> = (state, action) => {
    switch (action.type) {
@@ -23,7 +32,11 @@ const reducer: React.Reducer<State, Action> = (state, action) => {
       case "dataFailed":
          return { ...state, status: "error" };
       case "start":
-         return { ...state, status: "active" };
+         return {
+            ...state,
+            status: "active",
+            secondsRemaining: state.questions.length * SECS_PER_QUESTION,
+         };
 
       case "newAnswer": {
          const question = state.questions[state.index];
@@ -39,17 +52,40 @@ const reducer: React.Reducer<State, Action> = (state, action) => {
 
       case "nextQuestion":
          return { ...state, index: state.index + 1, answer: null };
+      case "finish":
+         return {
+            ...state,
+            status: "finished",
+            highscore:
+               state.points > state.highscore ? state.points : state.highscore,
+         };
+
+      case "restart":
+         return {
+            ...initialState,
+            questions: state.questions,
+            status: "ready",
+            highscore: state.highscore,
+         };
+      case "tick":
+         return {
+            ...state,
+            secondsRemaining:
+               state.secondsRemaining && state.secondsRemaining - 1,
+            status: state.secondsRemaining === 0 ? "finished" : state.status,
+         };
       default:
          throw new Error("Action is Unknown");
    }
 };
 function App() {
-   const [{ questions, status, index, answer }, dispatch] = useReducer(
-      reducer,
-      initialState
-   );
+   const [
+      { questions, status, index, answer, points, highscore, secondsRemaining },
+      dispatch,
+   ] = useReducer(reducer, initialState);
 
    const numQuestions = questions.length;
+   const totalPoints = questions.reduce((pre, curr) => curr.points + pre, 0);
 
    useEffect(() => {
       const controller = new AbortController();
@@ -83,12 +119,40 @@ function App() {
             )}
             {status === "active" && (
                <>
+                  <Progress
+                     index={index}
+                     numQuestions={numQuestions}
+                     points={points}
+                     totalPoints={totalPoints}
+                     answer={answer}
+                  />
                   <Question
                      question={questions[index]}
                      dispatch={dispatch}
                      answer={answer}
                   />
-                  <NextButton answer={answer} dispatch={dispatch} />
+                  <Footer>
+                     <Timer
+                        dispatch={dispatch}
+                        secondsRemaining={secondsRemaining}
+                     />
+                     <NextButton
+                        answer={answer}
+                        dispatch={dispatch}
+                        index={index}
+                        numQuestions={numQuestions}
+                     />
+                  </Footer>
+               </>
+            )}
+            {status === "finished" && (
+               <>
+                  <FinishScreen
+                     points={points}
+                     totalPoints={totalPoints}
+                     highscore={highscore}
+                  />
+                  <RestartButton dispatch={dispatch} />
                </>
             )}
          </Main>
