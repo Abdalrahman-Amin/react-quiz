@@ -1,19 +1,15 @@
-import React from "react";
-import { Action, Question as QuestionType } from "../types/types";
 import Options from "./Options";
+import { useQuiz } from "../context/QuizContext";
 
-interface QuestionProps {
-   question: QuestionType;
-   dispatch: React.ActionDispatch<[action: Action]>;
-   answer: null | number;
-}
-function Question({ question, dispatch, answer }: QuestionProps) {
-   return (
-      <div>
-         <h4>{question.question}</h4>
-         <Options question={question} dispatch={dispatch} answer={answer} />
-      </div>
-   );
+function Question() {
+  const { question } = useQuiz();
+
+  return (
+    <div>
+      <h4>{question.question}</h4>
+      <Options />
+    </div>
+  );
 }
 
 export default Question;
